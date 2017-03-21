@@ -11,7 +11,8 @@ import MBProgressHUD
 import CoreLocation
 
 
-class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresentationControllerDelegate {
+class ViewController: UIViewController {
+    let forecastCellIdentifire = "ForecastCell"
     var currentCityName = String()
     var hud = MBProgressHUD()
     var locationManager:CLLocationManager = CLLocationManager()
@@ -27,18 +28,21 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
     @IBOutlet weak var humidityLabel: UILabel!
     @IBOutlet weak var descriptionLabel: UILabel!
     @IBOutlet weak var temperatureView: UIView!
-
+    @IBOutlet weak var backgroundImage: UIImageView!
+    
+    @IBOutlet weak var collectionView: UICollectionView!
+    var forecastArray = [WeatherModel]()
+    
+    //MARK:-Actions
     @IBAction func actionSearchCountryButton(_ sender: UIBarButtonItem) {
         alertDisplayCityName()
     }
     @IBAction func actionGetCurrentLocation(_ sender: UIBarButtonItem) {
         self.getOpenWeatherMapWithCoordinates()
     }
-
+    //MARK:-Loading
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        let background = UIImage(named:"background")
-        self.view.backgroundColor = UIColor(patternImage: background!)
         self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
         self.navigationController?.navigationBar.shadowImage = UIImage()
         self.navigationController?.navigationBar.isTranslucent = true
@@ -47,22 +51,16 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setupLocationManager()
+        self.collectionView.delegate = self
+        self.collectionView.dataSource = self
     }
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return.lightContent
     }
-
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
-//MARK:-Segue
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "detailPopover" {
-            let controller:ForecastViewController = segue.destination as! ForecastViewController
-            controller.popoverPresentationController?.delegate = self
-            controller.cityID = self.cityID
-        }
-    }
+
 //MARK:-LocationManagerDelegate
     func setupLocationManager() {
         locationManager.delegate = self
@@ -70,23 +68,8 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
     }
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        print(manager.location ?? "nil")
-        let currentLocation:CLLocation = locations.last!
-        if (currentLocation.horizontalAccuracy > 0) {
-            locationManager.stopUpdatingLocation()
-            let coordinate = CLLocationCoordinate2DMake(currentLocation.coordinate.latitude, currentLocation.coordinate.longitude)
-            self.currentLocation = currentLocation
-            self.currentCoordinate = coordinate
-            self.activityIndicator()
-            self.getOpenWeatherMapWithCoordinates()
-     }
-}
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print(error.localizedDescription)
-    }
     
-//MARK: -Helped Methods
+//MARK: -OpenWeatherMapService
     func alertDisplayCityName() {
         let alert = UIAlertController(title: "City",
                                     message: "Enter city name",
@@ -108,9 +91,13 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
                                                         self.humidityLabel.text = String(weatherObject.humidity)
                                                         self.descriptionLabel.text = weatherObject.weatherDescription
                                                         self.cityID = weatherObject.cityID
-                                                        
+                                                        let imageName = weatherObject.iconName
+                                                        self.configureBackgroundImage(imagedName: imageName!)
+     
+                                                        self.getforecastWeatherFromServer(cityID: weatherObject.cityID)
                                                         self.slideWindAndHumitidyLabel()
                                                         self.fadeInAnimationLabels()
+                                                        
                                                         if weatherObject.icon != nil {
                                                             DispatchQueue.main.async(execute: {
                                                                 self.iconImageView.image = weatherObject.icon
@@ -142,7 +129,10 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
                                                 self.humidityLabel.text = String(weatherObject.humidity)
                                                 self.descriptionLabel.text = weatherObject.weatherDescription
                                                 self.cityID = weatherObject.cityID
-                                                
+                                                let imageName = weatherObject.iconName
+                                                self.configureBackgroundImage(imagedName: imageName!)
+                                                print(weatherObject.icon.description)
+                                                self.getforecastWeatherFromServer(cityID: weatherObject.cityID)
                                                 self.slideWindAndHumitidyLabel()
                                                 self.fadeInAnimationLabels()
                                                 if self.iconImageView != nil {
@@ -151,6 +141,7 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
                                                         self.hud.hide(animated: true)
                                                     })
                                                 }
+                                               
         },
                                                onFailure: {(error) in
                                                 self.alertErrorDescription(erorr: (error?.localizedDescription)!)
@@ -158,6 +149,26 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
         })
     }
     
+    func getforecastWeatherFromServer(cityID: Int) {
+        ServerManager.sharedManager.getOpenWeatherMapRequestForecastWithCityID(cityID:cityID,
+                                           onSuccess: { (weatherObject) in
+                                            var tempArray = [WeatherModel]()
+                                            for _ in 0...10 {
+                                                tempArray.append(weatherObject)
+                                            }
+                                            self.forecastArray = tempArray
+                                            self.collectionView.reloadData()
+        }, onFailure: {(error) in
+            self.alertErrorDescription(erorr: (error?.localizedDescription)!)
+        })
+    }
+    
+    //MARK: -HelpedMethods
+    func configureBackgroundImage(imagedName: String) {
+        let image = HelpedMethods.method.configureBackgroundImage(iconImage: imagedName)
+        self.backgroundImage.image = image
+        self.view.backgroundColor = UIColor(patternImage: self.backgroundImage.image!)
+    }
     func alertErrorDescription(erorr:String) {
         let alert = UIAlertController(title: "Error",
                                       message:erorr,
@@ -175,9 +186,6 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
         self.hud.show(animated: true)
     }
     
-    func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
-        return UIModalPresentationStyle.none
-    }
     func slideWindAndHumitidyLabel() {
         self.windSpeedLabel.transform = CGAffineTransform(translationX: -150, y: 0).scaledBy(x: 2, y: 2)
         self.humidityLabel.transform = CGAffineTransform(translationX: 150, y: 0).scaledBy(x: 2, y: 2)
@@ -209,4 +217,61 @@ class ViewController: UIViewController,CLLocationManagerDelegate,UIPopoverPresen
         view.insertSubview(visualEffectView, at: 0)
     }
 }
+extension ViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        cell.alpha = 0.0
+        UIView.animate(withDuration: 0.7, animations: {
+            cell.alpha = 1.0
+        })
+    }
+    
+}
+extension ViewController: UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 1
+    }
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return self.forecastArray.count
+    }
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: forecastCellIdentifire, for: indexPath) as! ForecastCollectionViewCell
+        let weatherModel = self.forecastArray[indexPath.item]
+        let icon = weatherModel.iconArray[indexPath.item]
+        let temp = weatherModel.temperatureArray[indexPath.item]
+        let time = weatherModel.timeArray[indexPath.item]
+        DispatchQueue.main.async {
+            cell.temperatureLabel.text = "\(String(describing: temp))°"
+            cell.weatherImageView.image = icon as? UIImage
+            cell.timeLabel.text = time as? String
+        }
+        
+        return cell
+    }
+}
+extension ViewController: CLLocationManagerDelegate {
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        print(manager.location ?? "nil")
+        let currentLocation:CLLocation = locations.last!
+        if (currentLocation.horizontalAccuracy > 0) {
+            locationManager.stopUpdatingLocation()
+            let coordinate = CLLocationCoordinate2DMake(currentLocation.coordinate.latitude, currentLocation.coordinate.longitude)
+            self.currentLocation = currentLocation
+            self.currentCoordinate = coordinate
+            self.activityIndicator()
+            self.getOpenWeatherMapWithCoordinates()
+        }
+    }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(error.localizedDescription)
+    }
+}
+
+
+
+
+
+
+
+
 

@@ -18,6 +18,7 @@ class WeatherModel: ServerObject {
     var currentTime = String()
     var iconID: Int!
     var icon: UIImage!
+    var iconName: String!
     var windSpeed: Double!
     var humidity: Int!
     var cityID: Int!
@@ -42,12 +43,15 @@ class WeatherModel: ServerObject {
         if let weatherID = self.response["weather"][0]["description"].string {
             self.weatherDescription = weatherID
         }
+        if let imageName = self.response["weather"][0]["icon"].string {
+            self.iconName = imageName
+        }
         if let sunrise = self.response["sys"]["sunrise"].double {
             if let sunset = self.response["sys"]["sunset"].double {
                 if let currentIconID = self.response["weather"][0]["id"].int {
                     self.iconID = currentIconID
                 let isNightOrDay = isSunsetOrSunRise(sunrise: sunrise, sunset: sunset)
-                self.icon = currentWeatherIconByID(condition: self.iconID, nightTime:isNightOrDay)
+                self.icon = HelpedMethods.method.currentWeatherIconByID(condition: self.iconID, nightTime:isNightOrDay)
             }
         }
     }

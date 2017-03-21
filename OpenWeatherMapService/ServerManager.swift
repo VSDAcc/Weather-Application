@@ -83,8 +83,7 @@ func getOpenWeatherMapRequestForecastWithCityID (cityID:Int,
 }
 func getWeatherFromServer(onSuccess:@escaping(_ weatherObject:WeatherModel) -> (),
                           onFailure:@escaping(_ error: Error?) -> ())
-{
-    
+{    
     let url: URL = URL.init(string: stringURL)!
     let urlRequest = URLRequest.init(url: url)
     let config = URLSessionConfiguration.default

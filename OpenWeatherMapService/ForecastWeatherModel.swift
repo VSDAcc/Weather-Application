@@ -18,7 +18,7 @@ class ForecastWeatherModel: WeatherModel {
         if let cityName = self.response["city"]["name"].string {
             self.cityName = cityName
         }
-        for index in 1...4 {
+        for index in 1...11 {
         if let tempResult = self.response["list"][index]["main"]["temp"].double {
             self.temperature = convertToFahrenheitOrCelWith(countryName: self.country, temperature: tempResult)
             self.temperatureArray.append(self.temperature as AnyObject)
@@ -30,7 +30,7 @@ class ForecastWeatherModel: WeatherModel {
         if let weatherIcon = self.response["list"][index]["weather"][0]["icon"].string {
             self.iconID = currentIconID
             let isNightOrDay = isTimeNightIcon(icon: weatherIcon)
-            self.icon = currentWeatherIconByID(condition:self.iconID, nightTime: isNightOrDay)
+            self.icon = HelpedMethods.method.currentWeatherIconByID(condition:self.iconID, nightTime: isNightOrDay)
             self.iconArray.append(self.icon as AnyObject)
         }
     }
