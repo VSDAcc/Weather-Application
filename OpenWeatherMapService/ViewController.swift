@@ -131,7 +131,6 @@ class ViewController: UIViewController {
                                                 self.cityID = weatherObject.cityID
                                                 let imageName = weatherObject.iconName
                                                 self.configureBackgroundImage(imagedName: imageName!)
-                                                print(weatherObject.icon.description)
                                                 self.getforecastWeatherFromServer(cityID: weatherObject.cityID)
                                                 self.slideWindAndHumitidyLabel()
                                                 self.fadeInAnimationLabels()
@@ -251,7 +250,6 @@ extension ViewController: UICollectionViewDataSource {
 extension ViewController: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        print(manager.location ?? "nil")
         let currentLocation:CLLocation = locations.last!
         if (currentLocation.horizontalAccuracy > 0) {
             locationManager.stopUpdatingLocation()

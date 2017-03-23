@@ -93,34 +93,24 @@ func getWeatherFromServer(onSuccess:@escaping(_ weatherObject:WeatherModel) -> (
                    completionHandler: {
                    (location, response,error) in
                     guard error == nil else {
-                        print("error calling GET on /todos/1")
-                        print(error ?? "ERROR")
                         return
                     }
-                    // make sure we got data
                     guard let responseData = location else {
-                        print("Error: did not receive data")
                         return
                     }
-                    // parse the result as JSON, since that's what the API provides
                     do {
                         guard let weatherJSON = try JSONSerialization.jsonObject(with:responseData, options:[]) as? JSON
                             else {
-                            print("error trying to convert data to JSON")
                             return
                         }
-                        print("The weatherJSON is" + weatherJSON.description)
                         let weatherObject = WeatherModel.init(response: weatherJSON)
                         weatherObject.setAllWeatherProperties()
                         onSuccess(weatherObject)
-                        guard let weatherJSONTittle = weatherJSON["title"].string else {
-                            print("Could not get todo title from JSON")
+                        guard weatherJSON["title"].string != nil else {
                             return
                         }
-                        print("The title is:" + weatherJSONTittle)
                     } catch  {
                         onFailure(error)
-                        print("error trying to convert data to JSON")
                         return
                     }
     })

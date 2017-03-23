@@ -14,10 +14,10 @@ class HelpedMethods {
     func configureBackgroundImage(iconImage: String) -> UIImage {
         var imageName = String()
         switch iconImage {
-        case let name where name == "01d" : imageName = "Sun-Day"
-        case let name where name == "02d" : imageName = "Sun-Day"
-        case let name where name == "03d" : imageName = "Sun-Day"
-        case let name where name == "04d" : imageName = "Sun-Day"
+        case let name where name == "01d" : imageName = "Sunshine"
+        case let name where name == "02d" : imageName = "Sunshine"
+        case let name where name == "03d" : imageName = "Clouds"
+        case let name where name == "04d" : imageName = "Clouds"
         case let name where name == "09d" : imageName = "Rain-Day"
         case let name where name == "10d" : imageName = "Rain-Day"
         case let name where name == "11d" : imageName = "Rain-Day"
@@ -32,12 +32,12 @@ class HelpedMethods {
         case let name where name == "13n" : imageName = "Snow-Night"
         case let name where name == "50d" : imageName = "Rain-Day"
         case let name where name == "50n" : imageName = "Rain-Night"
-        default: imageName = "Sun-Day"
+        default: imageName = "Sunshine"
         }
         if let iconImage = UIImage(named: imageName) {
         return iconImage
         }else {
-        return UIImage(named: "Sun-Day")!
+        return UIImage(named: "Sunshine")!
         }
     }
     func currentWeatherIconByID(condition:Int,nightTime:Bool) -> UIImage {
