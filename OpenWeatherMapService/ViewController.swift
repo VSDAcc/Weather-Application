@@ -35,7 +35,7 @@ class ViewController: UIViewController {
     
     //MARK:-Actions
     @IBAction func actionSearchCountryButton(_ sender: UIBarButtonItem) {
-        alertDisplayCityName()
+        self.alertDisplayCityName()
     }
     @IBAction func actionGetCurrentLocation(_ sender: UIBarButtonItem) {
         self.getOpenWeatherMapWithCoordinates()
@@ -46,7 +46,6 @@ class ViewController: UIViewController {
         self.navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
         self.navigationController?.navigationBar.shadowImage = UIImage()
         self.navigationController?.navigationBar.isTranslucent = true
-
     }
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,7 +60,7 @@ class ViewController: UIViewController {
         super.didReceiveMemoryWarning()
     }
 
-//MARK:-LocationManagerDelegate
+    //MARK:-LocationManagerDelegate
     func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -69,7 +68,7 @@ class ViewController: UIViewController {
         locationManager.startUpdatingLocation()
     }
     
-//MARK: -OpenWeatherMapService
+    //MARK: -OpenWeatherMapService
     func alertDisplayCityName() {
         let alert = UIAlertController(title: "City",
                                     message: "Enter city name",
@@ -81,34 +80,19 @@ class ViewController: UIViewController {
                                      style: UIAlertActionStyle.default,
                                    handler: { (action) in
             if let textField = alert.textFields?.first as UITextField! {
-                self.activityIndicator()
+                self.activityIndicatorStart()
                 ServerManager.sharedManager.getOpenWeatherMapRequestWithCityName(cityName:textField.text!,
                                                     onSuccess: { (weatherObject) in
-                                                        self.cityNameLabel.text = "\(weatherObject.cityName),\(weatherObject.country)"
-                                                        self.currentTimeLabel.text = weatherObject.currentTime
-                                                        self.temperatureLabel.text = "\(String(weatherObject.temperature))°"
-                                                        self.windSpeedLabel.text = String(weatherObject.windSpeed)
-                                                        self.humidityLabel.text = String(weatherObject.humidity)
-                                                        self.descriptionLabel.text = weatherObject.weatherDescription
-                                                        self.cityID = weatherObject.cityID
+                                                        self.setupAllViewsFromServerObject(weatherObject: weatherObject)
                                                         let imageName = weatherObject.iconName
                                                         self.configureBackgroundImage(imagedName: imageName!)
-     
                                                         self.getforecastWeatherFromServer(cityID: weatherObject.cityID)
                                                         self.slideWindAndHumitidyLabel()
                                                         self.fadeInAnimationLabels()
-                                                        
-                                                        if weatherObject.icon != nil {
-                                                            DispatchQueue.main.async(execute: {
-                                                                self.iconImageView.image = weatherObject.icon
-                                                                self.hud.hide(animated: true)
-                                                            })
-                                                        }
                 },
                                                     onFailure: {(error) in
                                                         self.alertErrorDescription(erorr: (error?.localizedDescription)!)
                                                         self.hud.hide(animated: true)
-                                                        
                 })
             }
         })
@@ -121,48 +105,49 @@ class ViewController: UIViewController {
     }
     func getOpenWeatherMapWithCoordinates()  {
         ServerManager.sharedManager.getOpenWeatherMapRequestWithCoordinate(coordinate: self.currentCoordinate,
-                                               onSuccess: { (weatherObject) in
-                                                self.cityNameLabel.text = "\(weatherObject.cityName),\(weatherObject.country)"
-                                                self.currentTimeLabel.text = weatherObject.currentTime
-                                                self.temperatureLabel.text = "\(String(weatherObject.temperature))°"
-                                                self.windSpeedLabel.text = String(weatherObject.windSpeed)
-                                                self.humidityLabel.text = String(weatherObject.humidity)
-                                                self.descriptionLabel.text = weatherObject.weatherDescription
-                                                self.cityID = weatherObject.cityID
-                                                let imageName = weatherObject.iconName
-                                                self.configureBackgroundImage(imagedName: imageName!)
-                                                self.getforecastWeatherFromServer(cityID: weatherObject.cityID)
-                                                self.slideWindAndHumitidyLabel()
-                                                self.fadeInAnimationLabels()
-                                                if self.iconImageView != nil {
-                                                    DispatchQueue.main.async(execute: {
-                                                        self.iconImageView.image = weatherObject.icon
-                                                        self.hud.hide(animated: true)
-                                                    })
-                                                }
-                                               
+                                                                           onSuccess: { (weatherObject) in
+                                                                            self.setupAllViewsFromServerObject(weatherObject: weatherObject)
+                                                                            let imageName = weatherObject.iconName
+                                                                            self.configureBackgroundImage(imagedName: imageName!)
+                                                                            self.getforecastWeatherFromServer(cityID: weatherObject.cityID)
+                                                                            self.slideWindAndHumitidyLabel()
+                                                                            self.fadeInAnimationLabels()
         },
-                                               onFailure: {(error) in
-                                                self.alertErrorDescription(erorr: (error?.localizedDescription)!)
-                                                self.hud.hide(animated: true)
+                                                                           onFailure: {(error) in
+                                                                            self.alertErrorDescription(erorr: (error?.localizedDescription)!)
+                                                                            self.hud.hide(animated: true)
         })
     }
-    
     func getforecastWeatherFromServer(cityID: Int) {
         ServerManager.sharedManager.getOpenWeatherMapRequestForecastWithCityID(cityID:cityID,
-                                           onSuccess: { (weatherObject) in
-                                            var tempArray = [WeatherModel]()
-                                            for _ in 0...10 {
-                                                tempArray.append(weatherObject)
-                                            }
-                                            self.forecastArray = tempArray
-                                            self.collectionView.reloadData()
+                                                                               onSuccess: { (weatherObject) in
+                                                                                var tempArray = [WeatherModel]()
+                                                                                for _ in 0...10 {
+                                                                                    tempArray.append(weatherObject)
+                                                                                }
+                                                                                self.forecastArray = tempArray
+                                                                                self.collectionView.reloadData()
         }, onFailure: {(error) in
             self.alertErrorDescription(erorr: (error?.localizedDescription)!)
         })
     }
-    
-    //MARK: -HelpedMethods
+    //MARK:-SetupViews
+    func setupAllViewsFromServerObject(weatherObject: WeatherModel) {
+        self.cityNameLabel.text = "\(weatherObject.cityName),\(weatherObject.country)"
+        self.currentTimeLabel.text = weatherObject.currentTime
+        self.temperatureLabel.text = "\(String(weatherObject.temperature))°"
+        self.windSpeedLabel.text = String(weatherObject.windSpeed)
+        self.humidityLabel.text = String(weatherObject.humidity)
+        self.descriptionLabel.text = weatherObject.weatherDescription
+        self.cityID = weatherObject.cityID
+        if weatherObject.icon != nil {
+            DispatchQueue.main.async(execute: {
+                self.iconImageView.image = weatherObject.icon
+                self.hud.hide(animated: true)
+            })
+        }
+    }
+    //MARK:-HelpedMethods
     func configureBackgroundImage(imagedName: String) {
         let image = HelpedMethods.method.configureBackgroundImage(iconImage: imagedName)
         self.backgroundImage.image = image
@@ -179,12 +164,11 @@ class ViewController: UIViewController {
         self.present(alert, animated: true, completion: nil)
     }
     
-    func activityIndicator()  {
+    func activityIndicatorStart()  {
         self.hud.label.text = "Loading..."
         self.view.addSubview(hud)
         self.hud.show(animated: true)
     }
-    
     func slideWindAndHumitidyLabel() {
         self.windSpeedLabel.transform = CGAffineTransform(translationX: -150, y: 0).scaledBy(x: 2, y: 2)
         self.humidityLabel.transform = CGAffineTransform(translationX: 150, y: 0).scaledBy(x: 2, y: 2)
@@ -206,14 +190,6 @@ class ViewController: UIViewController {
             self.currentTimeLabel.alpha = 1
             self.cityNameLabel.alpha = 1
         })
-        
-    }
-    func makeBlurEffectToView(view:UIView, effectStule:UIBlurEffectStyle) {
-        view.backgroundColor = UIColor.clear
-        let blurEffect:UIBlurEffect = UIBlurEffect(style: effectStule)
-        let visualEffectView:UIVisualEffectView = UIVisualEffectView(effect: blurEffect)
-        visualEffectView.frame = view.bounds
-        view.insertSubview(visualEffectView, at: 0)
     }
 }
 extension ViewController: UICollectionViewDelegate {
@@ -223,7 +199,6 @@ extension ViewController: UICollectionViewDelegate {
             cell.alpha = 1.0
         })
     }
-    
 }
 extension ViewController: UICollectionViewDataSource {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -243,7 +218,6 @@ extension ViewController: UICollectionViewDataSource {
             cell.weatherImageView.image = icon as? UIImage
             cell.timeLabel.text = time as? String
         }
-        
         return cell
     }
 }
@@ -256,7 +230,7 @@ extension ViewController: CLLocationManagerDelegate {
             let coordinate = CLLocationCoordinate2DMake(currentLocation.coordinate.latitude, currentLocation.coordinate.longitude)
             self.currentLocation = currentLocation
             self.currentCoordinate = coordinate
-            self.activityIndicator()
+            self.activityIndicatorStart()
             self.getOpenWeatherMapWithCoordinates()
         }
     }
@@ -264,12 +238,4 @@ extension ViewController: CLLocationManagerDelegate {
         print(error.localizedDescription)
     }
 }
-
-
-
-
-
-
-
-
 

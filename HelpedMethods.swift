@@ -9,6 +9,7 @@
 import UIKit
 
 class HelpedMethods {
+    
     static let method = HelpedMethods()
     
     func configureBackgroundImage(iconImage: String) -> UIImage {

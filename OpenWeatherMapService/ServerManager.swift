@@ -78,7 +78,7 @@ func getOpenWeatherMapRequestForecastWithCityID (cityID:Int,
                 onSuccess(weatherObject)
             case .failure(let error):
                 onFailure(error)
-            }
+        }
     }
 }
 func getWeatherFromServer(onSuccess:@escaping(_ weatherObject:WeatherModel) -> (),
